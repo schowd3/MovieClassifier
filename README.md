@@ -1,5 +1,8 @@
 # AmazonClassifier
-a A k-Nearest Neighbor Classifier to predict the sentiment for 15000 reviews for movies provided in the test file
+
+A practical application in many applications is to infer sentiment (or polarity) from free form review text submitted for range of products
+
+In this project, I have implement a k-Nearest Neighbor Classifier to predict the sentiment for 15000 reviews for movies provided in the test file (test_file.txt)
 
 Amazon Review Classification is done using data preprocessing, vectorization
 and k nearest neighbors. Reviews are tokenized after removing number and
