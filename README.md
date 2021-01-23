@@ -1,6 +1,6 @@
 # ReviewClassifier
 
-A practical application in many applications is to infer sentiment (or polarity) from free form review text submitted for range of products
+The goal of this project was to infer sentiment (or polarity) from free form review text submitted for range of products.
 
 In this project, I have implement a k-Nearest Neighbor Classifier to predict the sentiment for 15000 reviews for movies provided in the test file (test_file.txt)
 
