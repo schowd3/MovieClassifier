@@ -1,4 +1,4 @@
-# AmazonClassifier
+# ReviewClassifier
 
 A practical application in many applications is to infer sentiment (or polarity) from free form review text submitted for range of products
 
