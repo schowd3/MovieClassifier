@@ -1,140 +1,147 @@
 import numpy as np
-import pandas
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
+from bs4 import BeautifulSoup
+import re
+import nltk
+nltk.download('stopwords')
+from nltk.corpus import stopwords 
+from sklearn.metrics.pairwise import cosine_similarity
+from nltk.tokenize import sent_tokenize, word_tokenize
+from nltk.stem import PorterStemmer
+from sklearn.feature_extraction.text import TfidfTransformer
 import matplotlib.pyplot as plt
-from sklearn import preprocessing
-from sklearn.metrics import accuracy_score, plot_confusion_matrix
-import warnings
-warnings.filterwarnings("ignore")
+import matplotlib.table
 
-from sklearn.datasets import load_iris
-from sklearn.tree import DecisionTreeClassifier, plot_tree
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.feature_selection import SelectKBest
-from sklearn.feature_selection import chi2
-from sklearn.model_selection import GridSearchCV
+ps = PorterStemmer()
 
-         
-le = preprocessing.LabelEncoder()
+def findKN(similarity_vector, k):
+    #This function finds k nearest neighbors based on similarity
+      
+    return np.argsort(-similarity_vector)[:k]
 
-#read train data
-df = pandas.read_csv('1601355459_1343217_train.csv')
+def reviewCh(nearestNeighbors, labels):
+    #This function obtains Sentiment  
+    positive = 0
+    negative = 0
+    for neighbor in nearestNeighbors:
+        
+        
+        if int(labels[neighbor]) == 1:
+            positive += 1
+        else:
+            negative += 1
+        
+    if positive > negative:
+        return 1
+    else:
+        return -1
+    
+    
+# data preprocessing
+cls=[]
 
-features = ['F1', 'F2', 'F3', 'F4','F5', 'F6', 'F7', 'F8','F9']
+def preprocess(data):
+    #this function remove number and 
+    review=[]
+    data_len=len(data); 
+    for i in range(data_len):
+        line = data[i]
+        l_len = len(line)
+        for t in range(l_len):
+            if t ==  1:
+                cls.append(line[0:2])
+            else:
+                if t == 2:
+                    text = BeautifulSoup(line[2:l_len], "lxml")
+                    letter = re.sub("[^a-zA-Z]", " ", text.get_text())
+                    l_case = letter.lower()
+                    words = l_case.split()
+                    #print words
+                    stop = set(stopwords.words("english"))
+                    m_words = [wr for wr in words if not wr in stop]
+                    
+                    text1 = (" ".join(m_words))
+                    review.append(text1)  
+    return review
 
-X_train = df[features]
-
-
-
-# Fit the encoder to the pandas column
-le.fit(df['F10'])    
-X_F10=le.fit_transform(df['F10']) #convert string label to number
-
-
-# Fit the encoder to the pandas column
-le.fit(df['F11']) 
-X_F11=le.fit_transform(df['F11']) #convert string label to number
-
-
-X_train['F10']=X_F10   
-X_train['F11']=X_F11       #train data
-
-
-y_train = df['credit']     #train target
-n=len(y_train)
-
-#best feature selection
-X_new = SelectKBest(chi2, k=7).fit_transform(X_train, y_train)
-
-
-#==================  decision tree  =========================
-#cross validation using grid search 
-parameters = {'max_depth':range(3,20)}
-clf = GridSearchCV(DecisionTreeClassifier(), parameters, n_jobs=4)
-clf.fit(X=X_new, y=y_train)
-tree_model = clf.best_estimator_
-print (clf.best_score_, clf.best_params_) 
-
-# predict
-y_pred = tree_model.predict(X_new)
-
-#confusion matrix and accuracy 
-#accuracy
-
-acc=accuracy_score(y_train, y_pred)
-print('accuracy(decision tree): ',acc*100)
-
-#confusion matrix plot 
-
-
-title=("Confusion matrix of decision tree")
-
-disp = plot_confusion_matrix(tree_model, X_new,y_train)
-disp.ax_.set_title(title)
-
-print(title)
-print(disp.confusion_matrix)
-
-
-
-#============================================================
-
-#==================  knn  =========================
-#cross validation using grid search 
-
-k_range = list(range(1,10))
-weight_options = ["uniform", "distance"]
-
-param_grid = dict(n_neighbors = k_range, weights = weight_options)
-#print (param_grid)
-knn = KNeighborsClassifier()
-
-grid = GridSearchCV(knn, param_grid, cv = 3, scoring = 'accuracy')
-
-grid.fit(X_new,y_train)
-
-knn_model = grid.best_estimator_
-print (grid.best_score_, grid.best_params_) 
-
-# predict
-y_pred = grid.predict(X_new)
-
-#confusion matrix and accuracy 
-#accuracy
-
-acc=accuracy_score(y_train, y_pred)
-print('accuracy(knn): ',acc*100)
-
-#confusion matrix plot 
+def loadData(trainingFile, testingFile):
+    #Read the input files and read every line
+    
+    with open(trainingFile, mode='r', encoding='utf-8') as fr1:
+        trainFile = fr1.readlines()
+    
+    with open(testingFile, mode='r', encoding='utf-8') as fr2:
+        testFile = fr2.readlines()
+    
+    #Split each line in the two files into reviews and labels  
+    reviews_train  = [x.split("\t", 1)[1] for x in trainFile]
+    sentiments_train = [x.split("\t", 1)[0] for x in trainFile]
+    
+    #test_sentiments = [x.split("\t", 1)[1] for x in testFile]
+    reviews_test = [x.split("\t", 1)[0] for x in testFile]
+    
+    return reviews_train[1:], reviews_test[1:], sentiments_train[1:]
+    
 
 
-title=("Confusion matrix of knn")
-
-disp = plot_confusion_matrix(grid, X_new,y_train)
-disp.ax_.set_title(title)
-
-print(title)
-print(disp.confusion_matrix)
+#read input file
+reviews_train, reviews_test, sentiments_train = loadData("train_file.txt", "test_file.txt")
 
 
-#============================================================
+
+# train data processig
+
+review=preprocess(reviews_train)
+
+# test data processig
+t_rev=preprocess(reviews_test)
+        
+
+
+#create CSR matrix by implementing inverse document frequency and l2 normalization
+
+vectorizer = TfidfVectorizer(norm = 'l2',min_df = 0, use_idf = True, smooth_idf = False, sublinear_tf = True, \
+                             ngram_range=(1,2), max_features = 9000 )
+
+#vectorize train review
+train_vect = vectorizer.fit_transform(review)
+train_vect_show=train_vect[0:100,:]
+
+train_vect = train_vect.toarray()
+print (train_vect.shape)
+
+
+test_vect = vectorizer.transform(t_rev)
+
+test_vect = test_vect.toarray()
+print (test_vect.shape)
+
+
+k = 300
+test_sentiments = list()
+
+#get cosine similarity
+similarities = cosine_similarity(test_vect,train_vect)
+similarities_show=similarities[0:100,:]
 
 
 
 
-# =====================predict test data=======================
+for similarity in similarities:
+    
+    #Nearest neighbor find
+    knn = findKN(similarity, k)
+    prediction = reviewCh(knn, sentiments_train)
+    
+    #To write to the list as +1 instead of just a 1 for positive reviews
+    if prediction == 1:
+        test_sentiments.append('1')
+    else:
+        test_sentiments.append('-1')
 
-#read test data
-df = pandas.read_csv('1601355459_1391656_test.csv')
-features = ['F1', 'F2', 'F3', 'F4','F5', 'F6', 'F7']
-X_test = df[features]
 
 
-
-
-# predict
-Z_dt = tree_model.predict(X_test)
-
-#=============================================================
-with open('Format File.txt', 'w') as log:
-      for x in Z_dt:
-          log.write(str(x)+'\n')                
+with open('format.txt', 'w') as log:
+      for x in test_sentiments:
+          log.write(x+'\n')                
