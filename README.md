@@ -5,8 +5,7 @@ The goal of this project was to infer sentiment (or polarity) from free form rev
 In this project, I have implement a k-Nearest Neighbor Classifier to predict the sentiment for 15000 reviews for movies provided in the test file (test_file.txt)
 
 Amazon Review Classification is done using data preprocessing, vectorization
-and k nearest neighbors. Reviews are tokenized after removing number and
+and k nearest neighbor algorithm. Reviews are tokenized after removing number and
 punctuations. The tokenized reviews are vectorized using terms frequency method.
 K nearest neighbors are calculated using cosine similarity. The sentiment for testing
-reviews are calculated using sentiments of K nearest neighbor neighbors for training
-data.
+reviews are calculated using sentiments of K nearest neighbors.
