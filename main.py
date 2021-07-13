@@ -25,8 +25,6 @@ def reviewCh(nearestNeighbors, labels):
     positive = 0
     negative = 0
     for neighbor in nearestNeighbors:
-        
-        
         if int(labels[neighbor]) == 1:
             positive += 1
         else:
@@ -87,7 +85,6 @@ def loadData(trainingFile, testingFile):
 
 #read input file
 reviews_train, reviews_test, sentiments_train = loadData("train_file.txt", "test_file.txt")
-
 
 
 # train data processig
